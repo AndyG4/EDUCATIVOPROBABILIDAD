@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@latest/dist/Chart.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poisson Como Modelo de predicción</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #e4e4e4;
+            transition: background-color 0.5s, color 0.5s;
+        }
+
+        #container {
+            max-width: 800px;
+            margin: auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.5s, color 0.5s;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 10px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f2f2f2b9;
+        }
+
+        p {
+            text-align: center;
+        }
+        canvas {
+            display: block;
+            margin: 0 auto;
+            max-width: 50%; 
+            height: auto; 
+        }
+        #modoOscuroBtn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #333;
+            color: #fff;
+            border: none;
+            border-radius: 50%;
+            padding: 10px;
+            cursor: pointer;
+            outline: none;
+        }
+        body.modo-oscuro {
+    background-color: #333;
+    color: #242424;
+    transition: background-color 0.5s, color 0.5s; 
+
+}
+
+#container.modo-oscuro {
+    background-color: #555;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+    transition: background-color 0.5s, color 0.5s;
+    
+}
+
+#container.modo-oscuro h1 {
+    color: #fff;
+}
+
+#container.modo-oscuro th {
+    background-color: #333;
+    color: #fff;
+}
+
+#container.modo-oscuro td {
+    border: 1px solid #555;
+}
+
+#container.modo-oscuro p {
+    color: #fff;
+}
+#actividadesBtn {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 10px;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+
+    #actividadesSection {
+      display: none;
+      margin-top: 20px;
+    }
+
+    #siguienteBtn {
+      background-color: #2196F3;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 10px;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+
+    #progressBar {
+      width: 0;
+      height: 10px;
+      background-color: #2196F3;
+      margin-top: 10px;
+      border-radius: 4px;
+      transition: width 0.5s;
+    }
+    #myModal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgb(0, 0, 0);
+            background-color: rgba(0, 0, 0, 0.4);
+            padding-top: 60px;
+        }
+
+        #modalContent {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+        }
+        
+    </style>
+    
+</head>
+
+<body class="modo-oscuro">
+    <div id="container">
+        <h1>Poisson Como Modelo de predicción</h1>
+        <canvas id="miGrafica" width="100" height="100"></canvas>
+        <button id="modoOscuroBtn" onclick="toggleModoOscuro()">🌙</button>
+        <button id="actividadesBtn" onclick="mostrarActividades()">Actividades</button>
+        <div id="myModal">
+          <div id="modalContent">
+            <button id="cerrarModalBtn" onclick="cerrarModal()" style="position: absolute; right: auto; background-color: #ccc; border: none; color: #333; padding: 5px 10px; cursor: pointer; border-radius: 4px;">Cerrar</button>
+
+            <!-- Contenido de actividades -->
+            <p id="actividad1">Actividad 1: Realizar una predicción</p>
+            <p id="actividad2" style="display: none;">Actividad 2: Analizar los resultados</p>
+            <p id="actividad3" style="display: none;">Actividad 3: Interpretar la probabilidad</p>
+
+            <!-- Barra de progreso dentro del modal -->
+            <div style="width: 100%; height: 10px; background-color: #ddd; margin-top: 10px; border-radius: 4px;">
+                <div id="progressBar" style="width: 0; height: 100%; background-color: #2196F3; border-radius: 4px; transition: width 0.5s;"></div>
+            </div>
+
+            <!-- Botón para avanzar dentro del modal -->
+            <button id='siguienteBtn' onclick='avanzarActividad()'>Siguiente</button>
+            
+        </div>
+      </div>
+        
+
+        <script>
+            // Función para calcular el promedio de goles
+            function promedioGoles(goles, partidos) {
+                return goles / partidos;
+            }
+
+            // Función para calcular el factor de ataque o defensa
+            function factor(golesEquipo, golesLiga) {
+                return golesEquipo / golesLiga;
+            }
+
+            // Función para calcular los goles esperados
+            function golesEsperados(golesEquipo, factorAtaque, factorDefensa) {
+                return golesEquipo * factorAtaque * factorDefensa;
+            }
+
+            // Función para calcular el factorial de un número
+            function factorial(n) {
+                if (n === 0 || n === 1) {
+                    return 1;
+                } else {
+                    return n * factorial(n - 1);
+                }
+            }
+
+            // Función para calcular la probabilidad de Poisson
+            function probabilidadPoisson(goles, promedio) {
+                return Math.pow(Math.E, -promedio) * Math.pow(promedio, goles) / factorial(goles);
+            }
+
+            // Función para calcular la probabilidad de un resultado específico
+            function probabilidadResultado(golesA, golesB, promedioA, promedioB) {
+                let probabilidad = 0;
+                for (let i = 0; i < 15; i++) {
+                    for (let j = 0; j < 15; j++) {
+                        if (golesA === golesB) {
+                            if (i === j) {
+                                probabilidad += probabilidadPoisson(i, promedioA) * probabilidadPoisson(j, promedioB);
+                            }
+                        } else if (golesA > golesB) {
+                            if (i > j) {
+                                probabilidad += probabilidadPoisson(i, promedioA) * probabilidadPoisson(j, promedioB);
+                            }
+                        } else if (golesA < golesB) {
+                            if (i < j) {
+                                probabilidad += probabilidadPoisson(i, promedioA) * probabilidadPoisson(j, promedioB);
+                            }
+                        }
+                    }
+                }
+                return probabilidad;
+            }
+
+            // Entrada de datos desde el usuario (puedes personalizar esto según tus necesidades)
+            let golesFavorA = parseInt(prompt("Ingrese los goles a favor del equipo A:"));
+            let golesContraA = parseInt(prompt("Ingrese los goles en contra del equipo A:"));
+            let golesFavorB = parseInt(prompt("Ingrese los goles a favor del equipo B:"));
+            let golesContraB = parseInt(prompt("Ingrese los goles en contra del equipo B:"));
+            let partidosA = parseInt(prompt("Ingrese la cantidad de partidos jugados por cada equipo de la liga A:"));
+            let partidosB = parseInt(prompt("Ingrese la cantidad de partidos jugados por cada equipo de la liga B:"));
+            let golesLigaA = parseFloat(prompt("Ingrese el promedio de goles marcados por todos los equipos en la liga A:"));
+            let golesLigaB = parseFloat(prompt("Ingrese el promedio de goles marcados por todos los equipos en la liga B:"));
+
+            // Cálculo de promedios y factores
+            let promedioGolesFavorA = promedioGoles(golesFavorA, partidosA);
+            let promedioGolesContraA = promedioGoles(golesContraA, partidosA);
+            let promedioGolesFavorB = promedioGoles(golesFavorB, partidosB);
+            let promedioGolesContraB = promedioGoles(golesContraB, partidosB);
+
+            let factorAtaqueA = factor(promedioGolesFavorA, golesLigaA);
+            let factorDefensaA = factor(promedioGolesContraA, golesLigaA);
+            let factorAtaqueB = factor(promedioGolesFavorB, golesLigaB);
+            let factorDefensaB = factor(promedioGolesContraB, golesLigaB);
+
+            let promedioGolesEsperadosA = golesEsperados(promedioGolesFavorA, factorAtaqueA, factorDefensaB);
+            let promedioGolesEsperadosB = golesEsperados(promedioGolesFavorB, factorAtaqueB, factorDefensaA);
+
+            let probabilidadEmpate = probabilidadResultado(0, 0, promedioGolesEsperadosA, promedioGolesEsperadosB);
+            let probabilidadVictoriaA = probabilidadResultado(1, 0, promedioGolesEsperadosA, promedioGolesEsperadosB);
+            let probabilidadVictoriaB = probabilidadResultado(0, 1, promedioGolesEsperadosA, promedioGolesEsperadosB);
+
+            // Crear una matriz con las probabilidades de cada marcador posible
+            // Usando arrays.map() para calcular el producto externo
+            const matriz = Array.from({
+                length: 15
+            }, (_, i) => {
+                return Array.from({
+                    length: 15
+                }, (_, j) => {
+                    return probabilidadPoisson(i, promedioGolesEsperadosA) * probabilidadPoisson(j, promedioGolesEsperadosB);
+                });
+            });
+
+            // Mostrar resultados
+            document.write("<h3>Tabla de resultados mas probables:</h3>");
+            document.write("<table border='1'>");
+            document.write("<tr><td></td>");
+            for (let j = 0; j < 11; j++) {
+                document.write(`<td>${j}</td>`);
+            }
+            document.write("</tr>");
+
+            // Modificación para mostrar las probabilidades de cada marcador
+            for (let i = 0; i < 11; i++) {
+                document.write(`<tr><td>${i}</td>`);
+                for (let j = 0; j < 11; j++) {
+                    let probabilidad = (100 * probabilidadPoisson(j, promedioGolesEsperadosB) * probabilidadPoisson(i, promedioGolesEsperadosA)).toFixed(2);
+                    document.write(`<td>${probabilidad}%</td>`);
+                }
+                document.write("</tr>");
+            }
+
+            document.write("</table>");
+
+            // Encontrar el marcador más probable
+            let maxIndice = matriz.reduce((max, fila, i) => {
+                let maxValorFila = Math.max(...fila);
+                if (maxValorFila > max.valor) {
+                    return {
+                        valor: maxValorFila,
+                        indice: [i, fila.indexOf(maxValorFila)]
+                    };
+                }
+                return max;
+            }, {
+                valor: -Infinity,
+                indice: []
+            }).indice;
+
+            let maxGolesA = maxIndice[0];
+            let maxGolesB = maxIndice[1];
+
+            // Mostrar el marcador más probable
+            let probabilidadMaxima = (100 * matriz[maxGolesA][maxGolesB]).toFixed(2);
+            document.write(`<p>El marcador más probable es: ${maxGolesA}-${maxGolesB} con ${probabilidadMaxima}% de probabilidad</p>`);
+
+            document.write(`<p>La probabilidad de empate es ${(probabilidadEmpate * 100).toFixed(2)}%</p>`);
+            document.write(`<p>La probabilidad de victoria del equipo A es ${(probabilidadVictoriaA * 100).toFixed(2)}%</p>`);
+            document.write(`<p>La probabilidad de victoria del equipo B es ${(probabilidadVictoriaB * 100).toFixed(2)}%</p>`);
+            // Obtener referencia al elemento canvas
+            let canvas = document.getElementById("miGrafica");
+
+            // Crear objeto de tipo Chart
+            let grafica = new Chart(canvas, {
+                type: "pie", // Tipo de gráfica, puede ser "bar", "line", "pie", etc.
+                data: {
+                    labels: ["Victoria A", "Empate", "Victoria B"],
+                    datasets: [{
+                        data: [(probabilidadVictoriaA*100), (probabilidadEmpate*100), (probabilidadVictoriaB)*100],
+                        backgroundColor: ["#FFC107", "#2196F3", "#4CAF50"],
+                        label: "Probabilidades"
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    title: {
+                        display: true,
+                        text: "Probabilidades de resultado"
+                    }
+                }
+            });
+           
+            
+             // Función para activar/desactivar modo oscuro
+      function toggleModoOscuro() {
+        document.body.classList.toggle("modo-oscuro");
+      }
+      let actividadesRealizadas = 0;
+      function mostrarActividades() {
+        document.getElementById("actividadesSection").style.display = "block";
+      }
+      document.getElementById("actividadesBtn").addEventListener("click", function() {
+                // Muestra el modal
+                document.getElementById("myModal").style.display = "block";
+            });
+
+
+            function avanzarActividad() {
+                actividadesRealizadas++;
+                // Limitar la barra de progreso al número de actividades
+                let totalActividades = document.querySelectorAll('#modalContent p').length;
+
+                // Actualiza la barra de progreso
+                let progressBar = document.getElementById("progressBar");
+                let currentWidth = (actividadesRealizadas / totalActividades) * 100;
+                progressBar.style.width = currentWidth + "%";
+
+                // Cambia de actividad
+                if (actividadesRealizadas <= totalActividades) {
+                    // Oculta la actividad anterior
+                    if (actividadesRealizadas > 1) {
+                        document.getElementById("actividad" + (actividadesRealizadas - 1)).style.display = "none";
+                    }
+                    // Muestra la siguiente actividad
+                    document.getElementById("actividad" + actividadesRealizadas).style.display = "block";
+
+                    if (actividadesRealizadas === totalActividades) {
+                     document.getElementById('siguienteBtn').disabled = true;
+                }
+            }
+          }
+      
+
+            function cerrarModal() {
+                // Cierra el modal
+                document.getElementById("myModal").style.display = "none";
+            }
+
+      
+        </script>
+         
+
+        
+    </div>
+</body>
+
+</html>
